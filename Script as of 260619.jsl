@@ -1,0 +1,909 @@
+﻿//the data table you want to operate on ( for test purposes, I will open the file directly.)
+dt = Current Data Table();
+//number of columns in the data table
+nc = ncol(dt);
+nr = nrows(dt);
+
+//the width of the column list box in pixels
+lbWidth = 108;
+
+
+
+//List of confidence interval
+ConfidenceList = {"0.10","0.05","0.01"}; 
+//what happens upon clicking "Recall" or "Help" buttons
+Help = expr(New Window("Help",<<Modal,
+				Lineup box(
+				H List Box(
+				VListBox(
+					PanelBox ("General",
+						
+					Text Box ("• Please ensure at any point of time, only one Selective Unit Tests window is open.",<<setwidth(400)),
+					Text Box ("• If an error has occured, rerun the program."),
+					Text Box ("Remove"),
+					Text Box ("Selected columns in <i>Cast Selected Columns into Roles</i> can be removed by highlighting the columns and clicking on <i>Remove</i>.",<<setwidth(400),<<Markup),
+					
+					),
+					PanelBox ("Drift Trend Graph",
+					Text Box ("The Drift Trend Graph shows the amount of drift that a selected variable have encountered through the Time period.",<<setwidth(400)),	
+					Text Box (""),
+					Text Box ("Please take note of the following guidelines",<<Markup),
+					Text Box ("• Select Options to <i>Drift Trend Graph</i>.",<<Markup),
+					Text Box ("• Append Time into <i>(Overlay)</i> and Part id into <i>(X,Ordering)</i>.",<<Markup,<<setwidth(400)),
+					Text Box ("• Append desired columns into <i>(Y, Columns)</i>.",<<Markup),
+					Text Box (""),
+					Text Box ("Resultant Plot"),
+					Text Box ("• A Drift Trend Graph with the selected columns plotted against Part id with 4 specific time"),	
+						
+					),					
+					PanelBox ("t Test",
+					Text Box ("The t Test tells you how significant the differences between groups are.",<<setwidth(400)),	
+					Text Box (""),
+					Text Box ("Please take note of the following guidelines",<<Markup),
+					Text Box ("• Select Options to <i>t Test</i>.",<<Markup),
+					Text Box ("• Append Time into <i>(X, Ordering)</i> as we are comparing against time.",<<Markup,<<setwidth(400)),
+					Text Box ("• Append desired columns into <i>(Y, Columns)</i>, <i>Overlay</i> is not required.",<<Markup,<<setwidth(400)),
+					Text Box ("• Select the appropriate <i>Confidence Interval (α)</i>",<<Markup,<<setwidth(400)),
+					Text Box (""),
+					Text Box ("Resultant Plot"),
+					Text Box ("• A t Test plot with comparision report which shows the sampling distribution of the difference in the means with respect to Time",<<setwidth(400)),
+					Text Box ("• A summarize data table that contains the desired column's p-values in different timings, and the Pass Fail of the value.",<<setwidth(400)),
+					Text Box ("For more information about t Test, Please Visit",<<Mark up),	
+					bb3 = Button Box( "https://www.statisticshowto.datasciencecentral.com", Web( "https://www.statisticshowto.datasciencecentral.com/probability-and-statistics/t-test/" ), Underline Style( 1 ) ),	
+						
+					),					
+					
+				),
+				),
+				VListBox(
+					PanelBox ("Normal Probability Plot",
+					Text Box ("The Normal Probability Plot assesses whether or not a data set is approximately normally distributed.",<<Markup,<<setwidth(400)),	
+					Text Box (""),
+					Text Box ("Please take note of the following guidelines",<<Markup),
+					Text Box ("• Select Options to <i>Normal Probability Plot</i>.",<<Markup),
+					Text Box ("• Append Time into <i>(X, Ordering)</i> as we are comparing against time.",<<Markup,<<setwidth(400)),
+					Text Box ("• Append desired columns into <i>(Y, Columns)</i>, <i>Overlay</i> is not required.",<<Markup,<<setwidth(400)),
+					Text Box (""),
+					Text Box ("Resultant Plot"),	
+					Text Box ("• A Normal Quantile Plot which approximates a diagonal straight line.",<<Markup,<<setwidth(400)),
+					Text Box ("For more information about Normal Probability Plot, Please Visit"),
+					bb2 = Button Box( "https://www.jmp.com/support/help/14-2/normal-quantile-plot.shtml", Web( "https://www.jmp.com/support/help/14-2/normal-quantile-plot.shtml" ), Underline Style( 1 ) ),
+						
+					),
+					
+					PanelBox ("Matched Pairs",<<Markup,
+					Text Box ("Matched Pairs compares the means/row-by-row differences between two response columns, often the same subject before and after some treatment.",<<Markup,<<setwidth(400)), 
+					Text Box ("Please take note of the following guidelines",<<Markup),
+					Text Box ("• Select Options to <i>Matched Pairs</i>.",<<Markup),
+					Text Box ("• Append Time into <i>(X, Ordering)</i> as we are comparing against time.",<<Markup,<<setwidth(400)), 
+					Text Box ("• Append desired columns into <i>(Y, Columns)</i>, <i>Overlay</i> is not required.",<<Markup,<<setwidth(400)), 
+					//Text box ("• <i>Overlay</i> is not required.",<<Markup), 
+					Text Box (""), 
+					Text Box ("Resultant Plot"),
+					Text Box ("• Plots of paired differences by paired means and by row number.",<<Markup), 
+					Text Box ("For more information about Matched Pairs, Please Visit",<<Mark up),
+					bb1 = Button Box( "http://www.jmp.com/support/help/14-2/matched-pairs-analysis.shtml", Web( "http://www.jmp.com/support/help/14-2/matched-pairs-analysis.shtml" ), Underline Style( 1 ) ),
+							
+					),
+					
+					PanelBox ("Test Filter",
+					
+					Text Box ("Test Filter saves the selected columns into a data table which can be loaded at any point of time ",<<setwidth(400)),
+					Text Box (""),
+					Text Box ("Please take note of the following guidelines",<<Markup),
+					Text Box ("Saving"),
+					Text Box ("• After appending the columns into <i>Cast Selected Columns into Roles</i>, Click on the <i>Save</i> button to save the preset",<<setwidth(400),<<markup),
+					Text Box ("Loading"),
+					Text Box ("• The <i>Browse</i> button allows you to select your desired preset file",<<Markup),
+					Text Box ("• The selected file directory is shown. Click <i>Load</i> and the preset columns will be appended into <i>Cast Selected Columns into Roles</i>",<<setwidth(400),<< Markup),
+					Text Box ("• Select the appropriate setup and click<i> OK</i>",<<Markup),
+					
+					),
+				),
+				)
+				,ButtonBox("OK")));
+
+//opens new window called "Clustering" that houses all the function display boxes
+clusterDlg = New Window("Selective Units Tests",/*uncomment if you want a modal window: <<Modal*/,
+       BorderBox(left(3),top(2),
+              //V List Boxes organize elements vertically, from top to bottom
+              VListBox(
+                     //TextBox("Finding points that are close, have similar values"),
+                     //H List Boxes organize elements horizontally, from left to right
+                     HListBox(
+                           VListBox(
+                                  //Column Selectiron Box
+                                  PanelBox("Select Columns",
+                                         colListData=ColListBox(All,width(lbWidth),nLines(min(nc,10)))),
+                                  //Options Box
+                                  PanelBox("Options", 
+											LineupBox(Spacing(7), 
+													VListBox(
+                                                //Dropdown with two choices and defaulted to first choice
+                                                comboObj=comboBox({"Drift Trend Graph","t-Test","NPP Plot","Matched Pairs"},<<Set(1)),
+                                                //Radio Box with five choices and defaulted to third choice
+													)
+											),
+                                  ),
+                                 PanelBox("Set α Level (t-test only)",
+											
+									ConfidenceLevel=RadioBox(ConfidenceList,<<Set(2))
+                                 ),
+
+                           ), 
+                           //Column Select Boxes Y, Ordering, Label, and By and respective action buttons
+                           VListBox(
+                           
+                           PanelBox("Cast Selected Columns into Roles",
+                                  LineupBox(NCol(2),Spacing(3),
+                                         //Y, Columns Button and Column List Box with 5 lines, type numeric
+                                         ButtonBox("Y, Columns", colListY<<Append(colListData<<GetSelected)),
+                                         colListY = ColListBox(width(lbWidth),nLines(5),"numeric"),
+                                         //Ordering Button and Column List Box with 1 line, type numeric
+                                         ButtonBox("X,Ordering", colListX<<Append(colListData<<GetSelected)),
+                                         colListX = ColListBox(width(lbWidth),nLines(1)),
+                                         ButtonBox("Overlay", colListO<<Append(colListData<<GetSelected)),
+                                         colListO = ColListBox(width(lbWidth),nLines(1)),
+											
+                                  ), 
+                           ),
+                           PanelBox("Test Filter",
+								LineupBox(NCol(2),Spacing(3),
+								
+								ButtonBox("Browse",
+									
+									path = Pick File(
+									"Select JMP File",
+									"", // no default directory
+									{"JMP Files|jmp;jsl;jrn", "All Files|*"},
+									1,
+									0,
+									"" // no default file
+									);
+									If (path != "",
+										
+										file1 << set text(path)
+												
+									);
+												
+								),
+								file1 = Text edit Box("",<< Set Width( 200 ) ),
+								Spacer Box(Size(10,1));
+								ButtonBox("Load",
+
+									IF((file1<<gettext )!= "",
+										dt3 = Open(path/*,invisible(1), (uncomment this, data table wont pop up once you press load)*/);
+										
+										//Removing/clear the previous selected columns
+										for(i=0,i<nc,i++,
+											colListX<<setselected(1);
+											colListX<<remove selected;
+											colListX<<clear selection;
+											colListY<<setselected(1);
+											colListY<<remove selected;
+											colListY<<clear selection;
+											colListO<<setselected(1);
+											colListO<<remove selected;
+											colListO<<clear selection;
+										);
+										
+										// Introduce 3 new List & assign the saved dt into the list
+										colListA={};
+										colListB={};
+										colListC={};
+										colListA= Column(dt3, "X");
+										colListB= Column(dt3, "Y");
+										colListC= Column(dt3, "Overlay");
+
+					
+										//Getting the number of items in the List and assigning to a variable
+										ListAitems= Nitems(colListA<<get values);
+										ListBitems= Nitems(colListB<<get values);
+										ListOitems= Nitems(colListC<<get values);
+
+										// If the Columns in the dt match the ones loaded, append the respective 
+										//columns in the dt to the "Cast Selected columns into roles".
+										//Appending the selected Y columns
+										For(i=1,i<ListBitems+1,i++,
+											if(((colListB<<getvalues)[i])!="",
+												For(j=1,j<=nc,j++,
+													if((colListData<<getitems)[j]==colListB[i],
+														colListData<<set selected(j);
+														colListY<<Append(colListData<<GetSelected);
+														colListData<<Clear Selection;
+												
+													),//if
+												) //for 
+											);
+										);
+										
+										//Appending likewise, but for X Columns 
+										For(i=1,i<ListAitems+1,i++,
+											if(((colListA<<getvalues)[i])!="",
+												For(j=1,j<=nc,j++,
+													if((colListData<<getitems)[j]==colListA[i],
+														colListData<<set selected(j);
+														colListX<<Append(colListData<<GetSelected);
+														colListData<<Clear Selection;
+													),//if
+												) //for 
+											);
+
+										);
+										
+										// Appending likewise, but for Overlay Columns
+										IF (ListOitems != 0,
+											For(i=1,i<ListOitems+1,i++,
+												if(((colListC<<getvalues)[i])!="",
+													For(j=1,j<=nc,j++,
+														if((colListData<<getitems)[j]==colListC[i],
+															colListData<<set selected(j);
+															colListO<<Append(colListData<<GetSelected);
+															colListData<<Clear Selection;
+														),//if
+													) //for 
+												);
+
+											);										
+										);
+
+									);
+									
+								);	
+								)
+                           	
+                           	
+                           	
+                           ),
+									
+								 PanelBox("Note",
+								 Line upbox( VListbox(
+								 Text box ("<i>• Only Drift Trend Graph is required to have an Overlay</i>",<<Mark up), 
+                                 //Text Box("<i>is required to have a Overlay</i>",<<Markup),
+                                 Text Box("<i>• Please Refer to Help for further information</i>",<<Mark up),
+                                 //Text Box("<i>pair of Y and X for t test </i>",<<Mark up),
+                                 ),	
+                                 ),	
+                                 )
+                           ),
+                           //Actions menu
+                           PanelBox("Action",
+                                  LineupBox(NCol(1),
+                                  //OK Button
+                                  ButtonBox("OK",
+                                         //script that executes upon clicking "OK"
+                                         // Drift Trend Graph
+                                            if ((comboObj<<Get)==1,
+											New Window("Drift Trend Graph",tt=VListBox()); 
+											for(i=1,i<=Nitems((ColListY<<getitems)),i++,
+											tt<<append(
+											
+											(dt<<Graph Builder(
+											Size( 534, 454 ),
+											Show Control Panel( 0 ),
+											Variables(
+											// Values to graph the DTG Graph are taken from the columns we have selected previously
+											X( :(colListX<<GetItems) ), 
+											Y( :((colListY<<GetItems)[i]) ),
+											Overlay( :(colListO<<GetItems) )
+											),
+											Elements( Points( X, Y, Legend( 12 ) ), Line( X, Y, Legend( 13 ) ) ),
+											SendToReport(
+											Dispatch(
+													{},
+													"Graph Builder",
+													OutlineBox,
+													{Set Title ("Drift Trend Graph")}
+											),
+											Dispatch(
+													{},
+													"400",
+													ScaleBox,
+													{Legend Model(
+													12,				
+													Base( 0, 0, 0, Item ID( "0", 1 ) ),
+													Base( 1, 0, 0, Item ID( "168", 1 ) ),
+													Base( 2, 0, 0, Item ID( "500", 1 ) ),
+													Base( 3, 0, 0, Item ID( "1000", 1 ) )
+													)}
+											)
+											)
+											);
+											),
+											)
+											),
+											
+											
+											
+											
+											// t Test 
+                                            (comboObj<<Get)==2,
+                                            New Window("t Test",tt=VListBox());
+												(
+												Test1={};
+												Test2={};
+												Test3={};
+												Test4={};
+												Test5={};
+												Test6={};
+												
+												for(i=1,i<=Nitems((ColListY<<getitems)),i++,
+												
+												(tt<<append(
+												PFR=dt<<Oneway(
+												Y( :((colListY<<GetItems)[i]) ),
+												X( :(colListX<<GetItems) ),
+												Each Pair(
+												1,
+												Confidence Quantile( 0 ),
+												LSD Threshold Matrix( 0 ),
+												Connecting Letters Report( 0 ),
+												Detailed Comparisons Report( 1 )
+												),
+												Means and Std Dev( 0 ),
+												Set α Level( ConfidenceList[ConfidenceLevel<<get])
+												);
+												);
+												PassFailReport= PFR <<Report;
+												PassFailNewTime={};
+												PassFailAlltime= :(ColListX<<get items)<<GetValues;
+												//Appending all the different Time values into a new variable						
+												For(j=1,j<=nr,j=j+84,
+												Insert Into (PassFailNewTime,PassFailAlltime[j]);
+												
+												);
+												
+												PassFailTestItems=N items(PassFailNewTime);
+												PassFailNCH= (N Choose K(PassFailTestItems,2));
+												PassFailProbaList={};
+												if((ConfidenceLevel<<get) == 1,
+													(
+													Insert Into(Test1,(PassFailReport[NumberColBox(12)]<<get(1)));
+													Insert Into(Test2,(PassFailReport[NumberColBox(16)]<<get(1)));
+													Insert Into(Test3,(PassFailReport[NumberColBox(20)]<<get(1)));
+													Insert Into(Test4,(PassFailReport[NumberColBox(24)]<<get(1)));
+													Insert Into(Test5,(PassFailReport[NumberColBox(28)]<<get(1)));
+													Insert Into(Test6,(PassFailReport[NumberColBox(32)]<<get(1)))
+														
+													)
+													,
+													(ConfidenceLevel<<get) == 2,
+													(
+													Insert Into(Test1,(PassFailReport[NumberColBox(9)]<<get(1)));
+													Insert Into(Test2,(PassFailReport[NumberColBox(13)]<<get(1)));
+													Insert Into(Test3,(PassFailReport[NumberColBox(17)]<<get(1)));
+													Insert Into(Test4,(PassFailReport[NumberColBox(21)]<<get(1)));
+													Insert Into(Test5,(PassFailReport[NumberColBox(25)]<<get(1)));
+													Insert Into(Test6,(PassFailReport[NumberColBox(29)]<<get(1)))
+													)
+													,
+													(ConfidenceLevel<<get) == 3,
+													(
+													Insert Into(Test1,(PassFailReport[NumberColBox(12)]<<get(1)));
+													Insert Into(Test2,(PassFailReport[NumberColBox(16)]<<get(1)));
+													Insert Into(Test3,(PassFailReport[NumberColBox(20)]<<get(1)));
+													Insert Into(Test4,(PassFailReport[NumberColBox(24)]<<get(1)));
+													Insert Into(Test5,(PassFailReport[NumberColBox(28)]<<get(1)));
+													Insert Into(Test6,(PassFailReport[NumberColBox(32)]<<get(1)))
+													)
+													
+													
+												);
+												//Insert Into(Test1,(PassFailReport[NumberColBox(9)]<<get(1)));
+												//Insert Into(Test2,(PassFailReport[NumberColBox(13)]<<get(1)));
+												//Insert Into(Test3,(PassFailReport[NumberColBox(17)]<<get(1)));
+												//Insert Into(Test4,(PassFailReport[NumberColBox(21)]<<get(1)));
+												//Insert Into(Test5,(PassFailReport[NumberColBox(25)]<<get(1)));
+												//Insert Into(Test6,(PassFailReport[NumberColBox(29)]<<get(1)));
+												
+
+
+												//For(k=9,k<=(9+(PassFailNCH-1)*4),k=k+4,
+												//	
+												//	PassFailProba= PassFailReport[NumberColBox(k)]<<get(1);
+												//	Insert Into(PassFailProbaList,PassFailProba);
+												//print(PassFailProba);
+												
+												//);
+												),
+												
+												
+												
+												
+												);
+												
+												Testnames=(ColListY<<GetItems);
+												Print(Testnames);
+												PassRes="P";
+												FailRes="F";
+												Results1={};
+												Results2={};
+												Results3={};
+												Results4={};
+												Results5={};
+												Results6={};
+												if((ConfidenceLevel<<get)==1,
+												ConfidenceVal=0.10,
+												(ConfidenceLevel<<get)==2,
+												ConfidenceVal=0.05,
+												(ConfidenceLevel<<get)==3,
+												ConfidenceVal=0.01
+												);
+
+												Print(ConfidenceList[ConfidenceLevel<<get]);
+												for(n=1,n<=Nitems((ColListY<<getitems)),n++,
+													(	if(test1[n]>=ConfidenceVal,
+															Insert Into(Results1,PassRes),
+															Insert Into(Results1,FailRes)
+														
+														);
+														
+														if(test2[n]>=ConfidenceVal,
+															Insert Into(Results2,PassRes),
+															Insert Into(Results2,FailRes)
+														
+														);
+														
+														if(test3[n]>=ConfidenceVal,
+															Insert Into(Results3,PassRes),
+															Insert Into(Results3,FailRes)
+														
+														);
+														
+														if(test4[n]>=ConfidenceVal,
+															Insert Into(Results4,PassRes),
+															Insert Into(Results4,FailRes)
+														
+														);
+														
+														if(test5[n]>=ConfidenceVal,
+															Insert Into(Results5,PassRes),
+															Insert Into(Results5,FailRes)
+														
+														);
+														
+														if(test6[n]>=ConfidenceVal,
+															Insert Into(Results6,PassRes),
+															Insert Into(Results6,FailRes)
+														
+														);
+													);
+												
+												);
+
+												dtNo= New Table("t Test Results");
+												dtNo<<New Column("Test",Character,Values(Testnames));
+												dtNo<<New Column("168 & 0",numeric,Values(Test1));
+												dtNo<<New Column("P/F",Character,Values(Results1));
+												dtNo<<New Column("500 & 0",numeric,Values(Test2));
+												dtNo<<New Column("P/F",Character,Values(Results2));
+												dtNo<<New Column("500 & 168",numeric,Values(Test3));
+												dtNo<<New Column("P/F",Character,Values(Results3));
+												dtNo<<New Column("1000 & 0",numeric,Values(Test4));
+												dtNo<<New Column("P/F",Character,Values(Results4));
+												dtNo<<New Column("1000 & 168",numeric,Values(Test5));
+												dtNo<<New Column("P/F",Character,Values(Results5));
+												dtNo<<New Column("1000 & 500",numeric,Values(Test6));
+												dtNo<<New Column("P/F",Character,Values(Results6));
+												),
+												
+                                              
+                                            // NPP Plot
+                                            (comboObj<<Get)==3,
+				
+                                              	// Nomral Probability Plot
+												//Print((Column( dt, 5 ) << get property( "Spec Limits" ))[1]);
+												num=1;
+												num1=0;
+												xnum1={};
+                                              	New Window("Normal Probability Plot",tt=VListBox());
+                                              	for(i=1,i<=Nitems((ColListY<<getitems)),i++, 								
+												(tt<<append(
+												npp= dt<<Oneway(
+												Y( :Eval(colListY<<GetItems)[i] ),
+												X( :Eval(colListX<<GetItems) ),
+												All Graphs( 0 ),
+												Quantiles( 0 ),
+												Means and Std Dev( 1 ),
+												Plot Quantile by Actual( 1 ),
+												Line of Fit( 0 ),
+												Points( 0 ),
+												Box Plots( 1 ),
+												Mean Error Bars( 1 ),
+												Std Dev Lines( 1 ),
+												SendToReport(
+													Dispatch(
+														{"Quantiles"},
+														"",
+														TableBox,
+														{Set Shade Headings( 1 ), Set Shade Alternate Rows( 0 )}
+													),
+													Dispatch( {"Quantiles"}, "10%", NumberColBox, {Visibility( "Collapse" )} ),
+													Dispatch( {"Quantiles"}, "25%", NumberColBox, {Visibility( "Collapse" )} ),
+													Dispatch( {"Quantiles"}, "75%", NumberColBox, {Visibility( "Collapse" )} ),
+													Dispatch( {"Quantiles"}, "90%", NumberColBox, {Visibility( "Collapse" )} ),
+													Dispatch(
+														{"Normal Quantile Plot"},
+														"2",
+														ScaleBox,
+														{Format("Percent",9,2 )}
+														
+													),
+										
+												),
+
+												);
+												);
+												//rpt_ow = ow<<Report;
+                                              	//rpt_ow[AxisBox(1)]<<Close;	
+												
+												
+												//Values are all captured by the summmarize function and kept by respective variables.
+												summarize(byGroup=by(as column(colListX<<Getitems)),byMax=Max(as column(colListY<<Getitems)),
+												byMin=Min(as column(colListY<<Getitems)),byMedian=Quantile(as column(colListY<<Getitems),.5)
+												);
+												num=1;
+												num1=0;
+												For(z=1,z<=nc,z++,
+													if((CollistY<<Getitems)[i] != (Column(dt,z)<<getname),
+													(num += 1;
+														Print(num)
+													),
+													(Insert Into(num1,num);
+													Break())
+													); 
+													
+													
+												);
+												//Print((CollistY<<getitems)[i]);
+												//Print((Column( dt, num) << get property( "Spec Limits" )));
+												//Print(Column(dt,5)<<getname);
+												x= Column(dt,num)<<get property("Spec Limits");
+												y1=x["lsl"];
+												y2=x["usl"];
+												// Access the report output
+												ReportNPP= npp << report;
+
+												// Capture the names of the columns in the current table box output
+												namesList = ReportNPP["Means and Std Deviations"][tablebox(1)] << get names;
+												
+												// Get the values from the current columns in the table box
+												levels = ReportNPP["Means and Std Deviations"][stringcolbox(1)]<<get;
+												numbers = ReportNPP["Means and Std Deviations"][numbercolbox(1)]<<get;
+												means = ReportNPP["Means and Std Deviations"][numbercolbox(2)]<<get;
+												stddevs = ReportNPP["Means and Std Deviations"][numbercolbox(3)]<<get;
+												stderrs = ReportNPP["Means and Std Deviations"][numbercolbox(4)]<<get;
+												lowers = ReportNPP["Means and Std Deviations"][numbercolbox(5)]<<get;
+												uppers = ReportNPP["Means and Std Deviations"][numbercolbox(6)]<<get;
+												LSL = y1;
+												USL = y2;
+												//USL = Column(specs,"usl")[num1];
+												// Build the new table box adding in the new statistics 
+												NPPTable = Table Box(
+													string col box(namesList[1], levels),
+													number col box(namesList[2], numbers),
+													number col box(namesList[3], means),
+													number col box(namesList[4], stddevs),
+													number col box(namesList[5], stderrs),
+													number col box(namesList[6], lowers),
+													number col box(namesList[7], uppers),
+													number col box("Minimum", byMin),
+													number col box("Median", byMedian),
+													number col box("Maximum", byMax),
+													number col box("LSL",LSL),
+													number col box("USL",USL)	
+												);
+
+												// Append the new table box into the Means and Std Devs outline box
+												ReportNPP["Means and Std Deviations"] << append(NPPTable);
+												
+												// Delete the original table box
+												ReportNPP["Means and Std Deviations"][tablebox(1)]<<delete;
+												/*
+	
+												cols1 = dt << Get Column Names( numeric, continuous, "String" );
+
+												Items = N Items(cols1);
+												For( jj = 1, jj <= Nitems((colListY<<GetItems)[i]), jj++,
+
+
+													spec_x = Column(cols1[jj]) << Get Property( "Spec limits" );
+
+													Print(
+
+													Char( jj ) || ": Col is " || Char( cols1[jj]) ||
+
+													", LSL is " || Char( spec_x["lsl"] ) ||
+
+													", USL is " || Char( spec_x["usl"] )
+
+													);
+
+													)
+												*/
+                                      
+                                      
+												)
+												),
+												
+											(comboObj<<Get)==4,
+											(New Window("Matched Pairs",tt=VListBox());
+											for(i=1,i<=Nitems((ColListY<<getitems)),i++,
+												tt<<append(
+												dt2split = Eval(dt << getScript);
+												dtsplit = dt2split << Split(
+												Split By( :(colListX<<GetItems) ),
+												Split( :((colListY<<GetItems)[i]) ),
+												Remaining Columns ( Drop All),
+												Output Table( "split table" ),
+												Sort by Column Property,
+												(invisible(1)),
+												);
+
+
+												dtsplit<< Matched Pairs(
+												Y( :Name( "0" ), :Name( "168" ), :Name( "500" ), :Name( "1000" ) ),
+												Separate Pairs( 0 ),
+												Plot Dif By Row( 1 ),
+												Reference Frame( 0 ),
+												SendToReport(
+												Dispatch(
+													{},
+													"Matched Pairs",
+													OutlineBox,
+													{Set Title( (colListY<<GetItems)[i] )}
+												),	
+												Dispatch(
+												{"Difference: 168-0"},
+												"",
+												StringColBox,
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 168-0"},
+												"",
+												NumberColBox,
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 168-0"},
+												"",
+												String Col Box( 2 ),
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 168-0"},
+												"",
+												String Col Box( 3 ),
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 168-0"},
+												"",
+												ColStackBox,
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 500-0"},
+												"",
+												StringColBox,
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 500-0"},
+												"",
+												NumberColBox,
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 500-0"},
+												"",
+												String Col Box( 2 ),
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 500-0"},
+												"",
+												String Col Box( 3 ),
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 500-0"},
+												"",
+												ColStackBox,
+												{Visibility( "Collapse" )}
+												),
+												Dispatch( {}, "Difference: 500-168", OutlineBox, {Close( 1 )} ),
+												Dispatch(
+												{"Difference: 500-168"},
+												"",
+												StringColBox,
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 500-168"},
+												"",
+												NumberColBox,
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 500-168"},
+												"",
+												String Col Box( 2 ),
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 500-168"},
+												"",
+												String Col Box( 3 ),
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 500-168"},
+												"",
+												ColStackBox,
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 1000-0"},
+												"",
+												StringColBox,
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 1000-0"},
+												"",
+												NumberColBox,
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 1000-0"},
+												"",
+												String Col Box( 2 ),
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 1000-0"},
+												"",
+												String Col Box( 3 ),
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 1000-0"},
+												"",
+												ColStackBox,
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{},
+												"Difference: 1000-168",
+												OutlineBox,
+												{Close( 1 ), Set Title( "Difference: 1000-168" )}
+												),
+												Dispatch(
+												{"Difference: 1000-168"},
+												"",
+												StringColBox,
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 1000-168"},
+												"",
+												NumberColBox,
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 1000-168"},
+												"",
+												String Col Box( 2 ),
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 1000-168"},
+												"",
+												String Col Box( 3 ),
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 1000-168"},
+												"",
+												ColStackBox,
+												{Visibility( "Collapse" )}
+												),
+												Dispatch( {}, "Difference: 1000-500", OutlineBox, {Close( 1 )} ),
+												Dispatch(
+												{"Difference: 1000-500"},
+												"",
+												StringColBox,
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 1000-500"},
+												"",
+												NumberColBox,
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 1000-500"},
+												"",
+												String Col Box( 2 ),
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 1000-500"},
+												"",
+												String Col Box( 3 ),
+												{Visibility( "Collapse" )}
+												),
+												Dispatch(
+												{"Difference: 1000-500"},
+												"",
+												ColStackBox,
+												{Visibility( "Collapse" )}
+												)
+												)
+												);
+												
+
+												
+											);
+											Close(dt2split,no Save);	
+											)
+											)	
+											
+                                      
+                                      
+                                         );
+                                         
+                                         clusterDlg<<CloseWindow
+                                  ),
+                                  //Cancel Button
+                                  ButtonBox("Cancel", clusterDlg<<CloseWindow),
+                                  TextBox(" "),
+                                  //Remove Button (To remove the selected columns)
+                                  ButtonBox("Remove",
+                                         colListY<<RemoveSelected;
+                                         colListX<<RemoveSelected;
+                                         colListO<<RemoveSelected;
+                                         
+                                  ),
+                                  //Recall and Help not implemented here, buttons are shown in UI
+                                  ButtonBox("Help",Help),
+                                  ButtonBox("Save",
+										//Getting the selected columns and save to a variable
+                                         colListSaveX = Eval(colListX);
+                                         colListvalX = colListSaveX<<get items;
+                                         colListSaveY = Eval(colListY);
+                                         colListvalY = colListSaveY<<get items;
+                                         colListSaveO = Eval(colListO);
+                                         colListvalO = colListSaveO<<get items;
+                                        
+                                         newlistX={};
+                                         newlistY={};
+                                         newlistO={};
+                                         // Append the variables into a list 
+                                         For(i=1,i<=N Items(colListvalX),i++,
+											Insert Into(newlistX,colListvalX[i])
+                                         );
+                                         For(i=1,i<=N Items(colListvalY),i++,
+											Insert Into(newlistY,colListvalY[i])
+                                         );
+                                         For(i=1,i<=N Items(colListvalO),i++,
+											Insert Into(newlistO,colListvalO[i])
+                                         );
+                                  	     dt2= New Table("Preset",Invisible(1));
+                                         dt2<<New Column("Y",Character,Values(newlistY));
+                                         dt2<<New Column("X",Character,Values(newlistX));
+                                         dt2<<New Column("Overlay",Character,Values(newlistO));
+                                         If( dt2 << Save( "" ),
+											Write( "\!nsaved to " || (dt2 << GetPath) ),
+											//clusterDlg<<CloseWindow,
+											Write( "\!nsave canceled" )
+											//clusterDlg<<CloseWindow
+										); // prompt
+                                  ))
+                           )
+                     )
+              )
+       )
+);
